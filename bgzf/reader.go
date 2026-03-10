@@ -322,7 +322,7 @@ type Reader struct {
 	gzip.Header
 	r io.Reader
 
-	// head serialises access to the underlying
+	// head serializes access to the underlying
 	// io.Reader.
 	head chan *countReader
 
@@ -331,7 +331,7 @@ type Reader struct {
 	// or seek operation.
 	lastChunk Chunk
 
-	// Blocked specifies the behaviour of the
+	// Blocked specifies the behavior of the
 	// Reader at the end of a BGZF member.
 	// If the Reader is Blocked, a Read that
 	// reaches the end of a BGZF block will
@@ -536,7 +536,7 @@ func (bg *Reader) Read(p []byte) (int, error) {
 	}
 
 	// Discard leading empty blocks. This is an indexing
-	// optimisation to avoid retaining useless members
+	// optimization to avoid retaining useless members
 	// in a BAI/CSI.
 	for bg.current.len() == 0 {
 		bg.err = bg.nextBlock()
@@ -582,7 +582,7 @@ func (bg *Reader) ReadByte() (byte, error) {
 	}
 
 	// Discard leading empty blocks. This is an indexing
-	// optimisation to avoid retaining useless members
+	// optimization to avoid retaining useless members
 	// in a BAI/CSI.
 	for bg.current.len() == 0 {
 		bg.err = bg.nextBlock()
@@ -651,9 +651,6 @@ func (bg *Reader) nextBlock() error {
 	// Only set header if there was no error.
 	h := bg.current.header()
 	if bg.current.isMagicBlock() {
-		// TODO(kortschak): Do this more carefully. It may be that
-		// someone actually has extra data in this field that we are
-		// clobbering.
 		bg.Header.Extra = h.Extra
 	} else {
 		bg.Header = h
@@ -676,9 +673,6 @@ func (bg *Reader) cacheSwap(base int64) bool {
 		return false
 	}
 	if blk != nil {
-		// TODO(kortschak): Under some conditions, e.g. FIFO
-		// cache we will be discarding a non-nil evicted Block.
-		// Consider retaining these in a sync.Pool.
 		bg.cachePut(bg.current)
 		bg.current = blk
 		return true

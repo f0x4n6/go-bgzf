@@ -6,15 +6,9 @@
 package index
 
 import (
-	"errors"
 	"io"
 
-	"github.com/biogo/hts/bgzf"
-)
-
-var (
-	ErrNoReference = errors.New("index: no reference")
-	ErrInvalid     = errors.New("index: invalid interval")
+	"github.com/cuhsat/go-bgzf/bgzf"
 )
 
 // ReferenceStats holds mapping statistics for a genomic reference.
@@ -30,28 +24,12 @@ type ReferenceStats struct {
 	Unmapped uint64
 }
 
-// Reader wraps a bgzf.Reader to provide a mechanism to read a selection of
-// BGZF chunks.
 type ChunkReader struct {
 	r *bgzf.Reader
 
 	wasBlocked bool
 
 	chunks []bgzf.Chunk
-}
-
-// NewChunkReader returns a ChunkReader to read from r, limiting the reads to
-// the provided chunks. The provided bgzf.Reader will be put into Blocked mode.
-func NewChunkReader(r *bgzf.Reader, chunks []bgzf.Chunk) (*ChunkReader, error) {
-	b := r.Blocked
-	r.Blocked = true
-	if len(chunks) != 0 {
-		err := r.Seek(chunks[0].Begin)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return &ChunkReader{r: r, wasBlocked: b, chunks: chunks}, nil
 }
 
 // Read satisfies the io.Reader interface.
@@ -89,9 +67,6 @@ func (r *ChunkReader) Read(p []byte) (int, error) {
 		return n, err
 	}
 
-	// Check whether we are at or past the end of the current
-	// chunk or we have not made progress for reasons other than
-	// zero length p.
 	this := r.r.LastChunk()
 	if (len(p) != 0 && this == last) || vOffset(this.End) >= vOffset(r.chunks[0].End) {
 		r.chunks = r.chunks[1:]
@@ -106,13 +81,6 @@ func (r *ChunkReader) Read(p []byte) (int, error) {
 
 func vOffset(o bgzf.Offset) int64 {
 	return o.File<<16 | int64(o.Block)
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
 
 // Close returns the bgzf.Reader to its original blocking mode and releases it.

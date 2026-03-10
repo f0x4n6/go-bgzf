@@ -8,7 +8,7 @@ package cache
 import (
 	"sync"
 
-	"github.com/biogo/hts/bgzf"
+	"github.com/cuhsat/go-bgzf/bgzf"
 )
 
 var (
@@ -16,18 +16,6 @@ var (
 	_ Cache = (*FIFO)(nil)
 	_ Cache = (*Random)(nil)
 )
-
-// Free attempts to drop as many blocks from c as needed allow
-// n successful Put calls on c. It returns a boolean indicating
-// whether n slots were made available.
-func Free(n int, c Cache) bool {
-	empty := c.Cap() - c.Len()
-	if n <= empty {
-		return true
-	}
-	c.Drop(n - empty)
-	return c.Cap()-c.Len() >= n
-}
 
 // Cache is an extension of bgzf.Cache that allows inspection
 // and manipulation of the cache.
@@ -63,21 +51,6 @@ func remove(n *node, table map[int64]*node) {
 	n.next.prev = n.prev
 	n.next = nil
 	n.prev = nil
-}
-
-// NewLRU returns an LRU cache with n slots. If n is less than 1
-// a nil cache is returned.
-func NewLRU(n int) Cache {
-	if n < 1 {
-		return nil
-	}
-	c := LRU{
-		table: make(map[int64]*node, n),
-		cap:   n,
-	}
-	c.root.next = &c.root
-	c.root.prev = &c.root
-	return &c
 }
 
 // LRU satisfies the Cache interface with least recently used eviction
@@ -193,21 +166,6 @@ func (c *LRU) Put(b bgzf.Block) (evicted bgzf.Block, retained bool) {
 	return d, true
 }
 
-// NewFIFO returns a FIFO cache with n slots. If n is less than 1
-// a nil cache is returned.
-func NewFIFO(n int) Cache {
-	if n < 1 {
-		return nil
-	}
-	c := FIFO{
-		table: make(map[int64]*node, n),
-		cap:   n,
-	}
-	c.root.next = &c.root
-	c.root.prev = &c.root
-	return &c
-}
-
 // FIFO satisfies the Cache interface with first in first out eviction
 // behavior where Unused Blocks are preferentially evicted.
 type FIFO struct {
@@ -315,18 +273,6 @@ func (c *FIFO) Put(b bgzf.Block) (evicted bgzf.Block, retained bool) {
 		insertAfter(c.root.prev, n)
 	}
 	return d, true
-}
-
-// NewRandom returns a random eviction cache with n slots. If n is less than 1
-// a nil cache is returned.
-func NewRandom(n int) Cache {
-	if n < 1 {
-		return nil
-	}
-	return &Random{
-		table: make(map[int64]bgzf.Block, n),
-		cap:   n,
-	}
 }
 
 // Random satisfies the Cache interface with random eviction behavior

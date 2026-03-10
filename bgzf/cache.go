@@ -65,7 +65,7 @@ type Block interface {
 	ownedBy(*Reader) bool
 
 	// setOwner changes the owner to the given Reader,
-	// reseting other data to its zero state.
+	// resetting other data to its zero state.
 	setOwner(*Reader)
 
 	// hasData returns whether the Block has read data.
@@ -91,11 +91,11 @@ type Block interface {
 	// BGZF block. It returns -1 if the Block is not valid.
 	NextBase() int64
 
-	// setHeader sets the file header of of the gzip
+	// setHeader sets the file header of the gzip
 	// member that the Block data was decompressed from.
 	setHeader(gzip.Header)
 
-	// txOffset returns the current vitual offset.
+	// txOffset returns the current virtual offset.
 	txOffset() Offset
 }
 
@@ -148,8 +148,6 @@ func readToEOF(r io.Reader, buf []byte) (n int, err error) {
 	case err == io.EOF:
 		return n, nil
 	case n == MaxBlockSize && err == nil:
-		// This is paranoic, but some readers will return
-		// quickly when passed a zero-length byte slice.
 		var dummy [1]byte
 		_, err = r.Read(dummy[:])
 		if err == nil {
@@ -206,7 +204,7 @@ func (b *block) NextBase() int64 {
 func (b *block) setHeader(h gzip.Header) {
 	b.h = h
 	b.magic = h.OS == 0xff &&
-		// Test for zero time and old compress/gzip behaviour.
+		// Test for zero time and old compress/gzip behavior.
 		(h.ModTime.IsZero() || h.ModTime.Equal(unixEpoch)) &&
 		h.Name == "" &&
 		h.Comment == "" &&
